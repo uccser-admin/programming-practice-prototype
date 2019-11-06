@@ -50,7 +50,7 @@ jobs:
           script: bash ./infrastructure/prod-deploy/deploy-app.sh
           skip_cleanup: true
           on:
-            branch: master
+            branch: hotfix/1.5.3
     - script: skip
       name: "Update Google Cloud SQL database"
       deploy:
@@ -78,4 +78,4 @@ stages:
   - name: development deployment
     if: branch = develop
   - name: production deployment
-    if: branch = master
+    if: branch = hotfix/1.5.3
