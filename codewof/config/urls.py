@@ -19,8 +19,8 @@ urlpatterns = [
     path('users/', include('users.urls', namespace='users'),),
     path('accounts/', include('allauth.urls')),
     path('', include('programming.urls', namespace='programming'),),
-    path('liveness_check', health_check),
-    path('readiness_check', health_check),
+    path('gae/liveness_check', health_check),
+    path('gae/readiness_check', health_check),
     path('ckeditor/', include('ckeditor_uploader.urls')),
 ] + static(
     settings.MEDIA_URL, document_root=settings.MEDIA_ROOT
