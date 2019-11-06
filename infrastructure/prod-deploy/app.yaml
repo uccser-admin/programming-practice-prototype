@@ -23,7 +23,7 @@ resources:
   memory_gb: 3.75
 
 liveness_check:
-  path: "/gae/liveness_check"
+  path: "/liveness_check/"
 
 readiness_check:
-  path: "/gae/readiness_check"
+  path: "/readiness_check/"

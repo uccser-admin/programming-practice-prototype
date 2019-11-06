@@ -28,7 +28,7 @@ manual_scaling:
   instances: 1
 
 liveness_check:
-  path: "/gae/liveness_check"
+  path: "/liveness_check/"
 
 readiness_check:
-  path: "/gae/readiness_check"
+  path: "/readiness_check/"
