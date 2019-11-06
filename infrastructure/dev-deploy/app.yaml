@@ -27,8 +27,8 @@ resources:
 manual_scaling:
   instances: 1
 
-liveness_check:
-  path: "/liveness_check/"
+# liveness_check:
+#   path: "/liveness_check/"
 
-readiness_check:
-  path: "/readiness_check/"
+# readiness_check:
+#   path: "/readiness_check/"
