@@ -24,11 +24,5 @@ resources:
   cpu: 1
   memory_gb: 3.75
 
-liveness_check:
-  path: "/liveness_check/"
-
-readiness_check:
-  path: "/readiness_check/"
-
 manual_scaling:
   instances: 1
