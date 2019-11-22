@@ -25,7 +25,7 @@ jobs:
           script: bash ./infrastructure/dev-deploy/deploy-app.sh
           skip_cleanup: true
           on:
-            branch: develop
+            branch: gae-issue-144039717
     - script: skip
       name: "Update Google Cloud SQL database"
       deploy:
@@ -76,6 +76,6 @@ notifications:
 stages:
   - name: test
   - name: development deployment
-    if: branch = develop
+    if: branch = gae-issue-144039717
   - name: production deployment
     if: branch = master
