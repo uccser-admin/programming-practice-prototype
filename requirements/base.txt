@@ -4,7 +4,7 @@ python-dateutil==2.8.1
 Pillow==7.0.0
 argon2-cffi==19.2.0
 redis>=2.10.6, < 3  # pyup: < 3
-filetype==1.0.4
+filetype==1.0.7
 
 # Django
 django-model-utils==4.0.0
