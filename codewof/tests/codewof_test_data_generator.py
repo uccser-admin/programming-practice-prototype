@@ -21,7 +21,7 @@ from research.models import (
     StudyRegistration,
 )
 
-from users.models import UserType
+from users.models import UserType, Group, GroupRole, Membership
 
 User = get_user_model()
 
@@ -85,6 +85,75 @@ def generate_users(user):
         user_type=UserType.objects.get(slug='other'),
     )
     user_sally.save()
+
+
+def generate_groups():
+    """Generate groups for codeWOF tests. Groups are generated for user 1, covering all the GroupRoles."""
+    group_1 = Group.objects.create(
+        name='Group North',
+        description='Group North is the best group.'
+    )
+    group_2 = Group.objects.create(
+        name='Group East',
+        description='Group East is the best group.'
+    )
+    group_3 = Group.objects.create(
+        name='Group West',
+        description='Group West is the best group.'
+    )
+    group_4 = Group.objects.create(
+        name='Group South',
+        description='Group South is the best group.'
+    )
+    group_5 = Group.objects.create(
+        name='Group Mystery',
+        description='Few know of this group...'
+    )
+
+    group_1.save()
+    group_2.save()
+    group_3.save()
+    group_4.save()
+    group_5.save()
+
+
+def generate_memberships():
+    """Generate memberships for codeWOF tests. Memberships are generated for user 1 and every group created in
+    generate_groups, covering all the GroupRoles."""
+    group_north = Group.objects.get(name='Group North')
+    group_east = Group.objects.get(name='Group East')
+    group_west = Group.objects.get(name='Group West')
+    group_south = Group.objects.get(name='Group South')
+    management.call_command("load_group_roles")
+    user = User.objects.get(id=1)
+    admin_role = GroupRole.objects.get(name='Admin')
+    member_role = GroupRole.objects.get(name='Member')
+
+    membership_1 = Membership.objects.create(
+        user=user,
+        group=group_north,
+        role=admin_role
+    )
+    membership_2 = Membership.objects.create(
+        user=user,
+        group=group_east,
+        role=member_role
+    )
+    membership_3 = Membership.objects.create(
+        user=user,
+        group=group_west,
+        role=member_role
+    )
+    membership_4 = Membership.objects.create(
+        user=user,
+        group=group_south,
+        role=member_role
+    )
+
+    membership_1.save()
+    membership_2.save()
+    membership_3.save()
+    membership_4.save()
 
 
 def generate_achievements():
@@ -176,6 +245,33 @@ def generate_attempts():
     Attempt.objects.create(profile=user.profile, question=question, passed_tests=True,
                            datetime=datetime.date(2019, 9, 10))
 
+def generate_attempts_no_defaults():
+    """
+    Generate attempts for codeWOF tests. Always supplies the datetime to ensure consistent testing for
+    test_send_email_reminders.py
+    """
+    user1 = User.objects.get(id=1)
+    user2 = User.objects.get(id=2)
+    user3 = User.objects.get(id=3)
+    question = Question.objects.get(slug='program-question-1')
+
+    Attempt.objects.create(profile=user1.profile, question=question, passed_tests=True,
+                           datetime=datetime.date(2021, 5, 20))
+    Attempt.objects.create(profile=user1.profile, question=question, passed_tests=True,
+                           datetime=datetime.date(2021, 5, 21))
+    Attempt.objects.create(profile=user1.profile, question=question, passed_tests=True,
+                           datetime=datetime.date(2021, 3, 1))
+
+    Attempt.objects.create(profile=user2.profile, question=question, passed_tests=True,
+                           datetime=datetime.date(2021, 5, 13))
+    Attempt.objects.create(profile=user2.profile, question=question, passed_tests=True,
+                           datetime=datetime.date(2021, 5, 13))
+
+    Attempt.objects.create(profile=user3.profile, question=question, passed_tests=True,
+                           datetime=datetime.date(2020, 5, 13))
+    Attempt.objects.create(profile=user3.profile, question=question, passed_tests=True,
+                           datetime=datetime.date(2021, 2, 1))
+
 
 def generate_test_cases():
     """Generate test cases for codeWOF questions. Test cases are generated for program-question-1."""
@@ -211,3 +307,97 @@ def generate_study_registrations():
         study_group=study_group,
         user=user,
     )
+
+
+def generate_users_with_notifications(user):
+    """Generate users for codeWOF tests with notification days set. Creates two basic users for unit tests."""
+    management.call_command("load_user_types")
+    user_john = User.objects.create_user(
+        id=1,
+        username='john',
+        first_name='John',
+        last_name='Doe',
+        email='user1@uclive.ac.nz',
+        password='onion',
+        user_type=UserType.objects.get(slug='student'),
+        remind_on_monday=True,
+        remind_on_tuesday=False,
+        remind_on_wednesday=False,
+        remind_on_thursday=True,
+        remind_on_friday=False,
+        remind_on_saturday=False,
+        remind_on_sunday=False
+    )
+    user_john.save()
+
+    user_sally = User.objects.create_user(
+        id=2,
+        username='sally',
+        first_name='Sally',
+        last_name='Jones',
+        email='user2@uclive.ac.nz',
+        password='onion',
+        user_type=UserType.objects.get(slug='other'),
+        remind_on_monday=True,
+        remind_on_tuesday=False,
+        remind_on_wednesday=True,
+        remind_on_thursday=False,
+        remind_on_friday=True,
+        remind_on_saturday=False,
+        remind_on_sunday=False
+    )
+    user_sally.save()
+
+    user_jane = User.objects.create_user(
+        id=3,
+        username='jane',
+        first_name='Jane',
+        last_name='Doe',
+        email='user3@uclive.ac.nz',
+        password='onion',
+        user_type=UserType.objects.get(slug='other'),
+        remind_on_monday=False,
+        remind_on_tuesday=False,
+        remind_on_wednesday=False,
+        remind_on_thursday=False,
+        remind_on_friday=False,
+        remind_on_saturday=True,
+        remind_on_sunday=False
+    )
+    user_jane.save()
+
+    user_lazy = User.objects.create_user(
+        id=4,
+        username='lazy',
+        first_name='Lazy',
+        last_name='Dog',
+        email='user4@uclive.ac.nz',
+        password='onion',
+        user_type=UserType.objects.get(slug='teacher'),
+        remind_on_monday=False,
+        remind_on_tuesday=False,
+        remind_on_wednesday=False,
+        remind_on_thursday=False,
+        remind_on_friday=False,
+        remind_on_saturday=False,
+        remind_on_sunday=False
+    )
+    user_lazy.save()
+
+    user_brown = User.objects.create_user(
+        id=5,
+        username='brown',
+        first_name='Brown',
+        last_name='Fox',
+        email='user5@uclive.ac.nz',
+        password='onion',
+        user_type=UserType.objects.get(slug='student'),
+        remind_on_monday=True,
+        remind_on_tuesday=True,
+        remind_on_wednesday=True,
+        remind_on_thursday=True,
+        remind_on_friday=True,
+        remind_on_saturday=True,
+        remind_on_sunday=False
+    )
+    user_brown.save()

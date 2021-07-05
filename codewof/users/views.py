@@ -2,18 +2,20 @@
 
 import logging
 from random import Random
+
+from django.http import HttpResponseForbidden
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse
 from django.db.models import Q
-from django.core.exceptions import ObjectDoesNotExist
-from django.views.generic import DetailView, RedirectView, UpdateView
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
+from django.views.generic import DetailView, RedirectView, UpdateView, CreateView, DeleteView
 from rest_framework import viewsets
 from rest_framework.permissions import IsAdminUser
 from users.serializers import UserSerializer
 from programming import settings
-from users.forms import UserChangeForm
+from users.forms import UserChangeForm, GroupCreateUpdateForm
 from research.models import StudyRegistration
 
 
@@ -22,6 +24,7 @@ from programming.models import (
     Attempt,
     Achievement
 )
+from users.models import Group, Membership, GroupRole
 
 from programming.codewof_utils import get_questions_answered_in_past_month, backdate_user
 
@@ -129,6 +132,8 @@ class UserDetailView(LoginRequiredMixin, DetailView):
             visible=True,
             groups__isnull=False,
         ).distinct()
+        memberships = user.membership_set.all().order_by('group__name')
+
         # TODO: Simplify to one database query
         for study in studies:
             study.registered = StudyRegistration.objects.filter(
@@ -136,6 +141,7 @@ class UserDetailView(LoginRequiredMixin, DetailView):
                 study_group__in=study.groups.all(),
             ).exists()
         context['studies'] = studies
+        context['memberships'] = memberships
         context['codewof_profile'] = self.object.profile
         context['goal'] = user.profile.goal
         context['all_achievements'] = Achievement.objects.all()
@@ -199,3 +205,77 @@ class UserAPIViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAdminUser]
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+
+class GroupCreateView(LoginRequiredMixin, CreateView):
+    """View for creating a new group."""
+
+    model = Group
+    form_class = GroupCreateUpdateForm
+
+    def get_success_url(self):
+        """URL to route to on successful update."""
+        return reverse('users:dashboard')
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        membership = Membership(user=self.request.user, group=form.instance, role=GroupRole.objects.get(name="Admin"))
+        membership.save()
+        return response
+
+
+class AdminRequiredMixin:
+    """Mixin for checking the user is an Admin of the Group."""
+
+    def dispatch(self, request, *args, **kwargs):
+        admin_role = GroupRole.objects.get(name="Admin")
+        if Membership.objects.all().filter(user=self.request.user, group=self.get_object(), role=admin_role):
+            return super().dispatch(request, *args, **kwargs)
+        else:
+            raise PermissionDenied()
+
+
+class AdminOrMemberRequiredMixin:
+    """Mixin for checking the user is an Admin or Member of the Group."""
+
+    def dispatch(self, request, *args, **kwargs):
+        if Membership.objects.all().filter(user=self.request.user, group=self.get_object()):
+            return super().dispatch(request, *args, **kwargs)
+        else:
+            raise PermissionDenied()
+
+
+class GroupUpdateView(LoginRequiredMixin, AdminRequiredMixin, UpdateView):
+    """View for updating a group."""
+
+    model = Group
+    form_class = GroupCreateUpdateForm
+
+    def get_success_url(self):
+        """URL to route to on successful update."""
+        return reverse('users:groups-detail', args=[self.get_object().pk])
+
+
+class GroupDetailView(LoginRequiredMixin, AdminOrMemberRequiredMixin, DetailView):
+    """View for viewing the details of a group."""
+
+    model = Group
+
+    def get_context_data(self, **kwargs):
+        """Get additional context data for template."""
+        user = self.request.user
+        context = super().get_context_data(**kwargs)
+        admin_role = GroupRole.objects.get(name="Admin")
+        context['is_admin'] = len(Membership.objects.all().filter(user=user, group=self.get_object(),
+                                                                  role=admin_role)) != 0
+        return context
+
+
+class GroupDeleteView(LoginRequiredMixin, AdminRequiredMixin, DeleteView):
+    """View for deleting a group."""
+
+    model = Group
+
+    def get_success_url(self):
+        """URL to route to on successful delete."""
+        return reverse('users:dashboard')
